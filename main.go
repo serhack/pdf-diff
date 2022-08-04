@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
-	"strings"
 )
 
 // Structure for Pixel. Used as float to make operations more easily.
@@ -105,7 +104,7 @@ func CompareSingleImage(path1 string, path2 string, i int) {
 		for x := 0; x < len(pixel_1[y]); x++ {
 			result := compareSinglePixel(pixel_1[y][x], pixel_2[y][x])
 			if !result {
-				drawSection(pixel_3, y)
+				drawSection(pixel_3[y])
 			}
 		}
 	}
