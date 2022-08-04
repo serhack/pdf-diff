@@ -1,7 +1,7 @@
 # pdf-diff
 A tool for visualizing differences between two pdf files. Mainly dedicated to editors that spent a lot of hours on several pdf.
 
-![Example of output](https://github.com/serhack/pdf-diff/blob/master/image-1.png)
+![Example of output](https://raw.githubusercontent.com/serhack/pdf-diff/main/image-1.png)
 
 ## Foreword
 
