@@ -1,5 +1,5 @@
 # pdf-diff
-A tool for visualizing differences between two pdf files. Mainly dedicated to editors that spent a lot of hours on several pdf.
+A tool for visualizing differences between two pdf files. Mainly dedicated to editors that usually spends a lot of hours on several pdf.
 
 ![Example of output](https://raw.githubusercontent.com/serhack/pdf-diff/main/image-1.png)
 
@@ -37,14 +37,14 @@ or:
 
 ```
 go build
-./main pdf-1.pdf pdf-2.pdf
+./pdf-diff pdf-1.pdf pdf-2.pdf
 ```
 
 Once ran, the images are created in the folder `generated`.
 
 ### Contact
 
-If you wish to use this for your project, go ahead. If you have any issues or improvements, feel free to open a new [ISSUE]. Lastly, if you have a good algorithm to implement or just to discuss about any other tools for editor, you can [email me](hi@serhack.me).
+If you wish to use this for your project, go ahead. If you have any issues or improvements, feel free to open a new [ISSUE](https://github.com/serhack/pdf-diff/issues). Lastly, if you have a good algorithm to implement or just to discuss about any other tools for editor, you can [email me](hi@serhack.me).
 
 #### Donation
 
