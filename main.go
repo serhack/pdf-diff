@@ -207,6 +207,7 @@ func main(){
 	fmt.Println("pdf-diff: highlights the differences between two pdf files.")
 	if len(os.Args) < 2 {
 		fmt.Println("You need to specify two parameters!")
+		os.Exit(1)
 	}
 
 	CreatePNG(os.Args[1])
