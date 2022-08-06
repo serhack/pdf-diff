@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/sha256"
 	"errors"
+	"flag"
 	"fmt"
 	"image"
 	"image/color"
@@ -10,18 +11,21 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	//"runtime/pprof"
 	"strconv"
 )
 
-// Structure for Pixel. Used as float to make operations more easily.
+// Structure for Pixel.
 type Pixel struct {
-	r,g,b,a float64
+	r, g, b, a uint8
+	modified   bool
 }
 
-func rgbaToPixel(r uint32, g uint32, b uint32, a uint32) Pixel{
-	return Pixel{float64(r), float64(g), float64(b), float64(a)}
-}
+var rmaster, gmaster, bmaster float64
 
+func rgbaToPixel(r uint32, g uint32, b uint32, a uint32) Pixel {
+	return Pixel{uint8(r >> 8), uint8(g >> 8), uint8(b >> 8), uint8(a >> 8), false}
+}
 
 func CreatePNG(PDFPath string) {
 
@@ -60,21 +64,30 @@ func RetrievePixel(fileName string) ([][]Pixel, int, int) {
 
 	bounds := img.Bounds()
 	width, height := bounds.Max.X, bounds.Max.Y
-	var pixels [][]Pixel
+	pixels := make([][]Pixel, bounds.Max.Y)
 	for y := bounds.Min.Y; y < height; y++ {
-		var row []Pixel
+		row := make([]Pixel, bounds.Max.X)
 		for x := bounds.Min.X; x < width; x++ {
-			row = append(row, rgbaToPixel(img.At(x, y).RGBA()))
+			row[x] = rgbaToPixel(img.At(x, y).RGBA())
 		}
-		pixels = append(pixels, row)
+		pixels[y] = row
 	}
 	return pixels, width, height
 }
 
 func drawSection(row []Pixel) {
+	alpha := 0.6
+	notalpha := float64(1 - alpha)
+
 	for i := 0; i < len(row); i++ {
-		row[i].g = row[i].g * 0.7
-		row[i].b = row[i].b * 0.9
+
+		if !row[i].modified {
+			row[i].r = uint8(float64(row[i].r)*alpha + notalpha*rmaster)
+			row[i].g = uint8(float64(row[i].g)*alpha + notalpha*gmaster)
+			row[i].b = uint8(float64(row[i].b)*alpha + notalpha*bmaster)
+			row[i].modified = true
+		}
+
 	}
 }
 
@@ -84,7 +97,7 @@ func CompareSingleImage(path1 string, path2 string, i int) {
 	sha2 := ComputeSha256(path2)
 
 	// If the two images have the same hash, the two pages are the same.
-	if sha1 == sha2{
+	if sha1 == sha2 {
 		fmt.Printf("The pages number %d are the same.\n", i)
 		return
 	}
@@ -102,21 +115,23 @@ func CompareSingleImage(path1 string, path2 string, i int) {
 
 	for y := 0; y < len(pixel_1); y++ {
 		for x := 0; x < len(pixel_1[y]); x++ {
-			result := compareSinglePixel(pixel_1[y][x], pixel_2[y][x])
-			if !result {
-				drawSection(pixel_3[y])
+			if !pixel_3[y][x].modified {
+				result := compareSinglePixel(pixel_1[y][x], pixel_2[y][x])
+				if !result {
+					drawSection(pixel_3[y])
+				}
 			}
 		}
 	}
 
-	img := image.NewNRGBA(image.Rect(0, 0, x_1, y_1))
+	img := image.NewRGBA(image.Rect(0, 0, x_1, y_1))
 	for y := 0; y < y_1; y++ {
 		for x := 0; x < x_1; x++ {
 			img.Set(x, y, color.RGBA{
-				R: uint8(pixel_3[y][x].r),
-				G: uint8(pixel_3[y][x].g),
-				B: uint8(pixel_3[y][x].b),
-				A: uint8(pixel_3[y][x].a),
+				R: pixel_3[y][x].r,
+				G: pixel_3[y][x].g,
+				B: pixel_3[y][x].b,
+				A: pixel_3[y][x].a,
 			})
 		}
 	}
@@ -164,14 +179,16 @@ func ComputeSha256(filePath string) string {
 }
 
 func Compare(PDF1 string, PDF2 string) {
-	// Compares the two files 
+	// Compares the two files
 
 	shaPDF1 := ComputeSha256(PDF1)
 	shaPDF2 := ComputeSha256(PDF2)
 
-	err := os.Mkdir("generated", os.ModePerm)
-	if err != nil {
-		panic(err)
+	if _, err := os.Stat("generated"); errors.Is(err, os.ErrNotExist) {
+		err := os.Mkdir("generated", os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	i := 1
@@ -182,37 +199,55 @@ func Compare(PDF1 string, PDF2 string) {
 		// pdf contains <= 999 pages => 001.. 002.. 003
 
 		o := fmt.Sprintf("%d", k)
-		s := fmt.Sprintf("%0" + o + "d", i)
+		s := fmt.Sprintf("%0"+o+"d", i)
 
 		s_pdf1 := shaPDF1 + "/png_gen-" + s + ".png"
 		s_pdf2 := shaPDF2 + "/png_gen-" + s + ".png"
 
 		if _, err := os.Stat(s_pdf1); errors.Is(err, os.ErrNotExist) {
-			// TODO: remove this println
-			fmt.Println("File " + s_pdf1 + " does not exist.")
 			k++
-			if k == 12{
+			if k == 12 {
 				break
 			}
 		} else {
 			CompareSingleImage(s_pdf1, s_pdf2, i)
 			i++
 		}
-		
+
 	}
+}
+
+func hexToRGB(hexcolor string) {
+	// converts a string to rgb values
+	values, _ := strconv.ParseUint(hexcolor, 16, 32)
+	rmaster = float64(values >> 16)
+	gmaster = float64((values >> 8) & 0xff)
+	bmaster = float64((values) & 0xff)
+
+	fmt.Printf("Color chosen: %f %f %f \n", rmaster, gmaster, bmaster)
 
 }
 
-func main(){
-	fmt.Println("pdf-diff: highlights the differences between two pdf files.")
-	if len(os.Args) < 2 {
-		fmt.Println("You need to specify two parameters!")
+func main() {
+
+	// flags
+
+	color := flag.String("color", "ff2010", "hex value for the background color for highlighting")
+	flag.Parse()
+
+	arguments := flag.Args()
+
+	if len(arguments) < 2 {
+		fmt.Println("pdf-diff: highlights the differences between two pdf files.")
+		fmt.Println("Usage: pdf-diff pdf-file-1 pdf-file-2 [-color] hex-color")
+		fmt.Println()
+		flag.PrintDefaults()
 		os.Exit(1)
 	}
 
-	CreatePNG(os.Args[1])
-	CreatePNG(os.Args[2])
-
-	Compare(os.Args[1], os.Args[2])
+	hexToRGB(*color)
+	CreatePNG(arguments[0])
+	CreatePNG(arguments[1])
+	Compare(arguments[0], arguments[1])
 
 }
