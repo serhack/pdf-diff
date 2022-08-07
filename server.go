@@ -7,19 +7,18 @@ import (
 	"io"
 	"net/http"
 	"os"
-	//"os/exec"
 	"path/filepath"
 	"strings"
 )
 
-type DiffImage struct{
-	Number int // page number
+type DiffImage struct {
+	Number   int    // page number
 	Filename string // file1
 }
 
-type ResultPage struct{
-	Hash1 string
-	Hash2 string
+type ResultPage struct {
+	Hash1       string
+	Hash2       string
 	Differences []DiffImage
 }
 
@@ -40,7 +39,7 @@ func indexController(w http.ResponseWriter, r *http.Request) {
 func compareController(w http.ResponseWriter, r *http.Request) {
 	// Set a limit of 32 MB per request
 	r.Body = http.MaxBytesReader(w, r.Body, 32<<20)
-	
+
 	if r.Method == "GET" {
 		// Redirect to index page
 		http.Redirect(w, r, "/", http.StatusMovedPermanently)
@@ -70,22 +69,22 @@ func compareController(w http.ResponseWriter, r *http.Request) {
 
 		buff := make([]byte, 512)
 		if _, err = file1.Read(buff); err != nil {
-			panic(err) // do something with that error
+			panic(err)
 		}
 
 		var pdf1hash string
 
 		if http.DetectContentType(buff) == "application/pdf" {
-			out, err := os.Create("uploads/" + filepath.Clean(pdfFile1[0].Filename))
+			out, err := os.Create("data/uploads/" + filepath.Clean(pdfFile1[0].Filename))
 			if err != nil {
 				panic(err)
 			}
 			_, err = file1.Seek(0, io.SeekStart)
-			if err != nil{
+			if err != nil {
 				panic(err)
 			}
 			io.Copy(out, file1)
-			pdf1hash = ComputeSha256("uploads/" + filepath.Clean(pdfFile1[0].Filename))
+			pdf1hash = ComputeSha256("data/uploads/" + filepath.Clean(pdfFile1[0].Filename))
 		}
 
 		file2, err := pdfFile2[0].Open()
@@ -101,32 +100,26 @@ func compareController(w http.ResponseWriter, r *http.Request) {
 
 		if http.DetectContentType(buff) == "application/pdf" {
 			// Write them in upload folder
-			out, err := os.Create("uploads/" + filepath.Clean(pdfFile2[0].Filename))
+			out, err := os.Create("data/uploads/" + filepath.Clean(pdfFile2[0].Filename))
 			if err != nil {
 				panic(err)
 			}
 			_, err = file2.Seek(0, io.SeekStart)
-			if err != nil{
+			if err != nil {
 				panic(err)
 			}
 			io.Copy(out, file2)
-			pdf2hash = ComputeSha256("uploads/" + filepath.Clean(pdfFile2[0].Filename))
+			pdf2hash = ComputeSha256("data/uploads/" + filepath.Clean(pdfFile2[0].Filename))
 		}
 
 		fmt.Println("Starting a new job....")
+
 		// Start the job
-		
-		/*cmd := exec.Command("./pdf-diff" + "uploads/" + filepath.Clean(pdfFile1[0].Filename) + " uploads/" + filepath.Clean(pdfFile2[0].Filename))
-		err = cmd.Start()
-		if err != nil {
-			panic(err)
-		}
-		*/
 
 		hexToRGB("ff2010")
-		CreatePNG("uploads/" + filepath.Clean(pdfFile1[0].Filename))
-		CreatePNG("uploads/" + filepath.Clean(pdfFile2[0].Filename))
-		Compare("uploads/" + filepath.Clean(pdfFile1[0].Filename), "uploads/" + filepath.Clean(pdfFile2[0].Filename))
+		go CreatePNG("data/uploads/" + filepath.Clean(pdfFile1[0].Filename))
+		go CreatePNG("data/uploads/" + filepath.Clean(pdfFile2[0].Filename))
+		go Compare("data/uploads/"+filepath.Clean(pdfFile1[0].Filename), "data/uploads/"+filepath.Clean(pdfFile2[0].Filename))
 
 		// Redirect to result page
 		http.Redirect(w, r, "/compare/"+pdf1hash+"-"+pdf2hash, http.StatusMovedPermanently)
@@ -140,48 +133,60 @@ func compareController(w http.ResponseWriter, r *http.Request) {
 
 func retrieveFilesController(w http.ResponseWriter, r *http.Request) {
 	slug := r.URL.Path[len("/compare/"):]
+	if len(slug) == 0 {
+		http.Redirect(w, r, "/", http.StatusMovedPermanently)
+		return
+	}
 	hashes := strings.Split(slug, "-")
 	fmt.Printf("%s ", hashes[0])
 	fmt.Printf("%s \n", hashes[1])
 
 	// Checks if the folder were already created
 
-	if _, err := os.Stat("generated/" + hashes[0]); errors.Is(err, os.ErrNotExist) {
-		http.Error(w, "not available", http.StatusNotFound)
+	if _, err := os.Stat("data/generated/" + hashes[0]); errors.Is(err, os.ErrNotExist) {
+		http.Error(w, "The two pdfs ("+hashes[0]+", "+hashes[1]+") were not compared.", http.StatusNotFound)
+		return
+	}
+
+	if _, err := os.Stat("data/" + hashes[0] + "/.tmp"); errors.Is(err, os.ErrExist) {
+		http.Error(w, "The images are being created. It should take a few seconds.", http.StatusOK)
+		return
+	}
+
+	if _, err := os.Stat("data/generated/" + hashes[0] + "/.tmp"); errors.Is(err, os.ErrExist) {
+		http.Error(w, "pdf-diff takes a while to generate all the images.", http.StatusOK)
 		return
 	}
 
 	// Checks the result generated
 
-
 	// List all the images given a filename (e.g. filename-1.png)
 
-	f, err := os.Open("generated/" + hashes[0])
-    if err != nil {
-        fmt.Println(err)
-        return
-    }
-    files, err := f.Readdir(0)
-    if err != nil {
-        fmt.Println(err)
-        return
-    }
+	f, err := os.Open("data/generated/" + hashes[0])
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	files, err := f.Readdir(0)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	i := 0
 	var differences []DiffImage
 
-
-    for _, v := range files {
+	for _, v := range files {
 		single := DiffImage{
-			Number: i,
+			Number:   i,
 			Filename: v.Name(),
 		}
 		differences = append(differences, single)
-        i++
-    }
+		i++
+	}
 
 	structure := ResultPage{
-		Hash1: hashes[0],
-		Hash2: hashes[1],
+		Hash1:       hashes[0],
+		Hash2:       hashes[1],
 		Differences: differences,
 	}
 
@@ -191,7 +196,7 @@ func retrieveFilesController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = t.Execute(w, structure)
-	if err != nil{
+	if err != nil {
 		panic(err)
 	}
 }
@@ -202,7 +207,7 @@ func StartServer() {
 	http.HandleFunc("/compare", compareController)
 	http.HandleFunc("/compare/", retrieveFilesController)
 
-	http.Handle("/results/", http.StripPrefix("/results/", http.FileServer(http.Dir("./generated"))))
+	http.Handle("/results/", http.StripPrefix("/results/", http.FileServer(http.Dir("./data"))))
 
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {

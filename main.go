@@ -35,19 +35,30 @@ func CreatePNG(PDFPath string) {
 	folderName := ComputeSha256(PDFPath)
 
 	// Checks if a folder with the name sha256(file) already exists
-	if _, err := os.Stat(folderName); err == nil {
+	if _, err := os.Stat("data/" + folderName); err == nil {
 		return
 	}
 
 	// If not, probably we never met this pdf. Create the folder
-	err := os.Mkdir(folderName, os.ModePerm)
+	err := os.Mkdir("data/" +folderName, os.ModePerm)
 	if err != nil {
 		panic(err)
 	}
 
+	file, err := os.Create("data/" + folderName + "/.tmp")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
 	// Create the images
-	cmd, _ := exec.Command("pdftoppm", "-png", PDFPath, folderName+"/png_gen").Output()
+	cmd, _ := exec.Command("pdftoppm", "-png", PDFPath, "data/" + folderName+"/png_gen").Output()
 	fmt.Println(cmd)
+
+	err = os.Remove("data/" + folderName + ".tmp")
+	if err != nil {
+		panic(err)
+	}
 }
 
 func RetrievePixel(fileName string) ([][]Pixel, int, int) {
@@ -137,7 +148,7 @@ func CompareSingleImage(path1 string, path2 string, i int) {
 	}
 
 	// Create the file under "generated" folder
-	f, err := os.Create("generated/" + hash1 + "/image-" + strconv.Itoa(i) + ".png")
+	f, err := os.Create("data/generated/" + hash1 + "/image-" + strconv.Itoa(i) + ".png")
 	if err != nil {
 		panic(err)
 	}
@@ -185,15 +196,22 @@ func Compare(PDF1 string, PDF2 string) {
 	hash1 = shaPDF1
 	shaPDF2 := ComputeSha256(PDF2)
 
-	if _, err := os.Stat("generated"); errors.Is(err, os.ErrNotExist) {
-		err := os.Mkdir("generated", os.ModePerm)
+	if _, err := os.Stat("data"); errors.Is(err, os.ErrNotExist) {
+		err := os.Mkdir("data", os.ModePerm)
 		if err != nil {
 			panic(err)
 		}
 	}
 
-	if _, err := os.Stat("generated/" + shaPDF1); errors.Is(err, os.ErrNotExist) {
-		err := os.Mkdir("generated/"+shaPDF1, os.ModePerm)
+	if _, err := os.Stat("data/generated"); errors.Is(err, os.ErrNotExist) {
+		err := os.Mkdir("data/generated", os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	if _, err := os.Stat("data/generated/" + shaPDF1); errors.Is(err, os.ErrNotExist) {
+		err := os.Mkdir("data/generated/" + shaPDF1, os.ModePerm)
 		if err != nil {
 			panic(err)
 		}
@@ -211,8 +229,8 @@ func Compare(PDF1 string, PDF2 string) {
 		o := fmt.Sprintf("%d", k)
 		s := fmt.Sprintf("%0"+o+"d", i)
 
-		s_pdf1 := shaPDF1 + "/png_gen-" + s + ".png"
-		s_pdf2 := shaPDF2 + "/png_gen-" + s + ".png"
+		s_pdf1 := "data/" +shaPDF1 + "/png_gen-" + s + ".png"
+		s_pdf2 := "data/" + shaPDF2 + "/png_gen-" + s + ".png"
 
 		if _, err := os.Stat(s_pdf1); errors.Is(err, os.ErrNotExist) {
 			k++

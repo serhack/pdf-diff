@@ -27,11 +27,11 @@
         <div class="content">
         <h2>Result of the comparison</h2>
         <p>The following is the result between <pre>{{.Hash1}}</pre> and <pre>{{.Hash2}}</pre> files.</p>
-    
+        <a href="/">Return to index</a>
         {{ range .Differences }}
         <div class="result-box">
             <p>Page {{.Number}}:</p>
-            <img src="/results/{{$.Hash1}}/{{.Filename}}">
+            <img src="/results/generated/{{$.Hash1}}/{{.Filename}}">
         </div>
         {{ end }}
         <hr>
