@@ -232,21 +232,27 @@ func main() {
 	// flags
 
 	color := flag.String("color", "ff2010", "hex value for the background color for highlighting")
+	enableServer := flag.Bool("server", false, "flag to enable local server for pdf-diff")
+
 	flag.Parse()
 
-	arguments := flag.Args()
+	if !*enableServer {
+		arguments := flag.Args()
 
-	if len(arguments) < 2 {
-		fmt.Println("pdf-diff: highlights the differences between two pdf files.")
-		fmt.Println("Usage: pdf-diff pdf-file-1 pdf-file-2 [-color] hex-color")
-		fmt.Println()
-		flag.PrintDefaults()
-		os.Exit(1)
+		if len(arguments) < 2 {
+			fmt.Println("pdf-diff: highlights the differences between two pdf files.")
+			fmt.Println("Usage: pdf-diff pdf-file-1 pdf-file-2 [-color] hex-color")
+			fmt.Println()
+			flag.PrintDefaults()
+			os.Exit(1)
+		}
+
+		hexToRGB(*color)
+		CreatePNG(arguments[0])
+		CreatePNG(arguments[1])
+		Compare(arguments[0], arguments[1])
+	} else {
+		StartServer()
 	}
-
-	hexToRGB(*color)
-	CreatePNG(arguments[0])
-	CreatePNG(arguments[1])
-	Compare(arguments[0], arguments[1])
 
 }

@@ -42,6 +42,15 @@ go build
 
 Once ran, the images are created in the folder `generated`.
 
+#### Available flags
+
+A list of common flags that you can use via `pdf-diff` is provided in the following table.
+
+Name | Description
+-- | --
+`color` | this flag can be used to specify the background color that is composed for highlighting pdf differences
+`server` | this flag can be used to enable a web ui
+
 ### Contact
 
 If you wish to use this for your project, go ahead. If you have any issues or improvements, feel free to open a new [ISSUE](https://github.com/serhack/pdf-diff/issues). Lastly, if you have a good algorithm to implement or just to discuss about any other tools for editor, you can [email me](hi@serhack.me).

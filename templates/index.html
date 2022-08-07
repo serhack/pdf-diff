@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Diff any PDF istantanely!</title>
+    </head>
+    <style>
+        body {
+            font-family:Verdana, Geneva, Tahoma, sans-serif;
+            padding:10px;
+        }
+
+        pre{
+            display:inline-block;
+        }
+
+        .content{
+            width: 50%
+        }
+
+        form{
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-row{
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0px;
+        }
+
+    </style>
+    <body>
+        <div class="content">
+            <h1>pdf-diff</h1>
+            <p>Choose two file pdfs with the same dimensions to compare. <pre>pdf-diff</pre> will captures each page as an image and compares those to produce a fantastic detailed result.</p>
+            <hr>
+            <form method="POST" enctype="multipart/form-data" action="/compare">
+                <div class="form-row">
+                    <label for="pdf-1">First PDF file:</label>
+                    <input type="file" id="pdf-1">
+                </div>
+                <div class="form-row">
+                    <label for="pdf-2">Second PDF file:</label>
+                    <input type="file" id="pdf-2">
+                </div>
+                <div class="form-row">
+                    <input type="submit">
+                </div>
+            </form>
+            <hr>
+            <footer>
+                <small>Server source code available at <a href="https://github.com/serhack/pdf-diff">serhack/pdf-diff</a> repository.</small>
+            </footer>
+        </div>
+    </body>
+</html>
