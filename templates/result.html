@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Result</title>
+    </head>
+    <style>
+        body {
+            font-family:Verdana, Geneva, Tahoma, sans-serif;
+            padding:10px;
+        }
+
+        pre{
+            display:inline-block;
+        }
+
+        .content{
+            width: 50%
+        }
+
+        img{
+            border: 1px solid black;
+            max-width: 800px;
+        }
+
+    </style>
+    <body>
+        <div class="content">
+        <h2>Result of the comparison</h2>
+        <p>The following is the result between <pre>{{.Hash1}}</pre> and <pre>{{.Hash2}}</pre> files.</p>
+    
+        {{ range .Differences }}
+        <div class="result-box">
+            <p>Page {{.Number}}:</p>
+            <img src="/results/{{$.Hash1}}/{{.Filename}}">
+        </div>
+        {{ end }}
+        <hr>
+        <footer>
+            <small>Server source code available at <a href="https://github.com/serhack/pdf-diff">serhack/pdf-diff</a> repository.</small>
+        </footer>
+        </div>
+    </body>
+</html>

@@ -21,6 +21,7 @@ type Pixel struct {
 }
 
 var rmaster, gmaster, bmaster float64
+var hash1 string
 
 func rgbaToPixel(r uint32, g uint32, b uint32, a uint32) Pixel {
 	return Pixel{uint8(r >> 8), uint8(g >> 8), uint8(b >> 8), uint8(a >> 8), false}
@@ -136,7 +137,7 @@ func CompareSingleImage(path1 string, path2 string, i int) {
 	}
 
 	// Create the file under "generated" folder
-	f, err := os.Create("generated/image-" + strconv.Itoa(i) + ".png")
+	f, err := os.Create("generated/" + hash1 + "/image-" + strconv.Itoa(i) + ".png")
 	if err != nil {
 		panic(err)
 	}
@@ -181,6 +182,7 @@ func Compare(PDF1 string, PDF2 string) {
 	// Compares the two files
 
 	shaPDF1 := ComputeSha256(PDF1)
+	hash1 = shaPDF1
 	shaPDF2 := ComputeSha256(PDF2)
 
 	if _, err := os.Stat("generated"); errors.Is(err, os.ErrNotExist) {
@@ -188,6 +190,15 @@ func Compare(PDF1 string, PDF2 string) {
 		if err != nil {
 			panic(err)
 		}
+	}
+
+	if _, err := os.Stat("generated/" + shaPDF1); errors.Is(err, os.ErrNotExist) {
+		err := os.Mkdir("generated/"+shaPDF1, os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		return
 	}
 
 	i := 1
