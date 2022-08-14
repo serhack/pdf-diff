@@ -27,6 +27,12 @@ The only requirement asked for running this tool is the `pdftoppm` program. Base
 apt install poppler-utils
 ```
 
+Mac
+
+```
+brew install poppler
+```
+
 To run the script, you can simply open a new shell and type:
 
 ```
