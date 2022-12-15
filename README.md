@@ -27,23 +27,14 @@ The only requirement asked for running this tool is the `pdftoppm` program. Base
 apt install poppler-utils
 ```
 
-For Mac users:
+For [Homebrew](https://brew.sh/) users:
 
-```
-brew install poppler
-```
-
-To run the script, you can simply open a new shell and type:
-
-```
-go run main.go ./pdf-1.pdf ./pdf-2.pdf
+```sh
+$ brew install pdf-diff
 ```
 
-or:
-
-```
-go build
-./pdf-diff pdf-1.pdf pdf-2.pdf
+```sh
+$ go pdf-diff pdf-1.pdf pdf-2.pdf
 ```
 
 Once ran, the images are created in the folder `generated`.
