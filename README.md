@@ -34,7 +34,7 @@ $ brew install pdf-diff
 ```
 
 ```sh
-$ go pdf-diff pdf-1.pdf pdf-2.pdf
+$ pdf-diff pdf-1.pdf pdf-2.pdf
 ```
 
 Once ran, the images are created in the folder `generated`.
